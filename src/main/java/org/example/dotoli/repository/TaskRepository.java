@@ -3,6 +3,8 @@ package org.example.dotoli.repository;
 import java.util.List;
 
 import org.example.dotoli.domain.Task;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,9 +15,15 @@ import org.springframework.data.repository.query.Param;
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
 	@Query("SELECT t " +
-			"FROM Task t " +
-			"WHERE t.member.id = :memberId " +
-			"ORDER BY t.done ASC, t.id DESC")
-	List<Task> findAllSorted(@Param("memberId") Long memberId);
+		"FROM Task t " +
+		"WHERE t.member.id = :memberId " +
+		"ORDER BY t.done ASC, t.id DESC")
+	Page<Task> findAllSorted(@Param("memberId") Long memberId, Pageable pageable);
 
+	@Query("SELECT t " +
+		"FROM Task t " +
+		"WHERE t.member.id = :memberId AND t.content LIKE %:content%"
+	)
+	List<Task> findByContentContainingAndMemberId(@Param("memberId") Long memberId,
+		@Param("content") String content);
 }
