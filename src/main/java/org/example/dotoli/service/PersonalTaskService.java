@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Task 항목 관련 비즈니스 로직을 처리하는 서비스 클래스
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class PersonalTaskService {
 
 	private final TaskRepository taskRepository;
@@ -49,7 +51,7 @@ public class PersonalTaskService {
 	 * 사용자의 모든 할 일 목록 조회
 	 */
 	public Page<TaskResponseDto> getAllTasksByMemberId(Long memberId, Pageable pageable) {
-		Page<Task> tasks = taskRepository.findTasksByMemberId(memberId, pageable);
+		Page<Task> tasks = taskRepository.findPersonalTasksByMemberId(memberId, pageable);
 		return tasks.map(TaskMapper::toTaskResponseDto);
 	}
 
@@ -98,14 +100,15 @@ public class PersonalTaskService {
 	/**
 	 * 조건 별로 선택된 정렬 조회
 	 */
-	public Page<TaskResponseDto> filterTasks(
+	public Page<TaskResponseDto> filterTask(
 			Long memberId, Pageable pageable, Long teamId,
 			LocalDate startDate, LocalDate endDate,
 			LocalDateTime deadline, Boolean flag,
 			LocalDate createdAt, Boolean done) {
 		Page<Task> tasks = taskRepositoryCustom.TaskFilter(
 				memberId, pageable, teamId, startDate,
-				endDate, deadline, flag, createdAt, done);
+				endDate, deadline, flag, createdAt, done, null);
+
 		return tasks.map(TaskMapper::toTaskResponseDto);
 	}
 
@@ -119,6 +122,24 @@ public class PersonalTaskService {
 		validateTaskOwnership(task.getMember().getId(), memberId);
 
 		return task;
+	}
+
+	/**
+	 * 할 일 검색
+	 */
+	public Page<TaskResponseDto> searchTask(Long memberId, Pageable pageable, String keyword) {
+		Page<Task> tasks = taskRepositoryCustom.TaskFilter(
+				memberId, pageable, null, null, null, null,
+				null, null, null, keyword);
+
+		return tasks.map(task -> new TaskResponseDto(
+				task.getId(),
+				task.getContent(),
+				task.isDone(),
+				task.getDeadline(),
+				task.isFlag(),
+				task.getCreatedAt()
+		));
 	}
 
 	/**
